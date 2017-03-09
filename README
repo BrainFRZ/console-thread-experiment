@@ -1,0 +1,45 @@
+PURPOSE
+    Attempt to calculate n terms of Fibonacci's sequence per round in a background thread and
+display them in the console. During runtime, the user should be able to start, pause, resume, stop,
+change max value, reset, restart, and change the speed of rounds with immediate effect (with minor
+error in rescheduling time if necessary). This is an experiment to work with threads in a console
+environment.
+
+
+COMMANDS
+    help        Lists each command and its description (this list)
+
+    max [#]     Sets process to end when past given value
+
+    pause       Pauses process if running, or message is displayed
+
+    reset       Stops process and resets environment to default starting state
+
+    restart     If running or paused: immediately restarts from starting value
+                If not running: message is displayed
+
+    speed [#]   Changes the time allotted for each iteration. If no value is
+                given, the speed is reset to default. If speed is set to 0,
+                scheduling is suspended and process continues until terminated.
+
+    start [#]   If value is less than 1, error message is displayed
+                If stopped, starts at given value or 1.
+                If running, starts program execution from given value. If
+                    no value is given, message is displayed
+                If paused, process resumes at given value or last value.
+
+    stop        Stops the process if running, or displays a message
+
+
+RUNTIME FLOW
+    The flow is divided into three stages: stopped, paused, and running. At launch, runtime begins
+as stopped. In all stages, a prompt symbol will be printed and the user will be able to enter a
+command. The prompt symbol will depend on the current stage of runtime.
+
+    When stopped, the user may start execution, set the max and speed for the next execution, or get
+help.
+    
+    When paused, the user may restart from last starting value, change the speed or max, or resume.
+    
+    When running, the user may change the max or speed, reset the process, start from a new value,
+pause, or stop.
