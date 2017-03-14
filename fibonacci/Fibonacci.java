@@ -31,6 +31,16 @@ import java.util.Arrays;
 public final class Fibonacci {
 
     /**
+     * Default term 0 is 0.
+     */
+    public static final int DEFAULT_0 = 0;
+
+    /**
+     * Default term 1 is 1.
+     */
+    public static final int DEFAULT_1 = 1;
+
+    /**
      * Calculates a specific term of the Fibonacci sequence with generalized starting terms.
      * If term, <code>a</code>, or <code>b</code> are negative, or <code>b</code> is less than
      * <code>a</code>, an {@link IllegalArgumentException} is thrown.

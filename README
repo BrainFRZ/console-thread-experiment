@@ -24,7 +24,7 @@ COMMANDS
 
     start [# #] If values are negative or the second is less than the first, an
                     error message is displayed.
-                If stopped, starts at given value or 1.
+                If stopped, starts at given value or 0 and 1.
                 If running, starts program execution from given value. If
                     no value is given, message is displayed
                 If paused, process resumes at given value or last value.
