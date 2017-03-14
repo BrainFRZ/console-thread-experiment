@@ -15,14 +15,15 @@ COMMANDS
 
     reset       Stops process and resets environment to default starting state
 
-    restart     If running or paused: immediately restarts from starting value
+    restart     If running or paused: immediately restarts from starting terms
                 If not running: message is displayed
 
     speed [#]   Changes the time allotted for each iteration. If no value is
                 given, the speed is reset to default. If speed is set to 0,
                 scheduling is suspended and process continues until terminated.
 
-    start [#]   If value is less than 1, error message is displayed
+    start [# #] If values are negative or the second is less than the first, an
+                    error message is displayed.
                 If stopped, starts at given value or 1.
                 If running, starts program execution from given value. If
                     no value is given, message is displayed
@@ -38,8 +39,8 @@ command. The prompt symbol will depend on the current stage of runtime.
 
     When stopped, the user may start execution, set the max and speed for the next execution, or get
 help.
-    
+
     When paused, the user may restart from last starting value, change the speed or max, or resume.
-    
+
     When running, the user may change the max or speed, reset the process, start from a new value,
 pause, or stop.
