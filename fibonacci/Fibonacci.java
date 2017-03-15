@@ -18,27 +18,32 @@
 
 package fibonacci;
 
-import java.util.Arrays;
+import java.math.BigInteger;
+import java.util.ArrayList;
 
 /**
  * A utility class that statelessly calculates the Fibonacci sequence. By default, the first two
  * terms of the sequence are 0 and 1. Each following term is defined as the sum of the two terms
  * before it. The sequence may be generalized to start with different nonnegative initial terms.
  *
+ * Change Log:
+ * v1.1, 15Mar2017, Terry Weiss:
+ *     - Changed int representation to BigInteger. I didn't think how fast the sequence grew.
+ *
  * @Author      Terry Weiss
- * @Version     1.0, 14Mar2017
+ * @Version     1.1, 15Mar2017
  */
 public final class Fibonacci {
 
     /**
      * Default term 0 is 0.
      */
-    public static final int DEFAULT_0 = 0;
+    public static final BigInteger DEFAULT_0 = new BigInteger("0");
 
     /**
      * Default term 1 is 1.
      */
-    public static final int DEFAULT_1 = 1;
+    public static final BigInteger DEFAULT_1 = new BigInteger("1");
 
     /**
      * Calculates a specific term of the Fibonacci sequence with generalized starting terms.
@@ -50,10 +55,10 @@ public final class Fibonacci {
      * @param   b       Second term of the sequence
      * @return          Value of the specified term
      */
-    public static int at(final int term, int a, int b) {
+    public static BigInteger at(final int term, BigInteger a, BigInteger b) {
         if (term < 0) {
             throw new IllegalArgumentException("Term must be non-negative: " + term);
-        }  else if (a < 0 || b < a) {
+        }  else if (a.compareTo(BigInteger.ZERO) == -1 || b.compareTo(a) == -1) {
             throw new IllegalArgumentException("Terms must be positive, and second term must be "
                     + "later in the sequence: term1=" + a + " term2=" + b);
         }
@@ -63,13 +68,14 @@ public final class Fibonacci {
             return a;
         } else if (term == 1) {
             return b;
-        } else if (b == 0) { // a <= b, so a must also be 0, so entire series will be 0
-            return 0;
+        } else if (b.equals(BigInteger.ZERO)) {
+            // a <= b, so a must also be 0, so entire series will be 0
+            return BigInteger.ZERO;
         }
 
-        int val = 0;
+        BigInteger val = BigInteger.ZERO;
         for (int i = 2; i <= term; ++i) {
-            val = a + b;
+            val = a.add(b);
             a = b;
             b = val;
         }
@@ -85,8 +91,8 @@ public final class Fibonacci {
      * @return  Value of the specified term
      * @see     #at(int, int, int)
      */
-    public static int at(final int term) {
-        return at(term, 0, 1);
+    public static BigInteger at(final int term) {
+        return at(term, BigInteger.ZERO, BigInteger.ONE);
     }
 
 
@@ -103,24 +109,24 @@ public final class Fibonacci {
      * @param   length  Length of the sequence block
      * @param   a       Two terms before block begins
      * @param   b       One term before block begins
-     * @return          Array of values in the sequence block
+     * @return          ArrayList of values in the sequence block
      * @see             #sequence(int, int, int)
      */
-    public static int[] nextBlock(final int length, int a, int b) {
+    public static ArrayList<BigInteger> nextBlock(final int length, BigInteger a, BigInteger b) {
         if (length <= 0) {
             throw new IllegalArgumentException("Length must be positive: " + length);
-        } else if (a < 0 || b < a) {
+        } else if (a.compareTo(BigInteger.ZERO) == -1 || b.compareTo(a) == -1) {
             throw new IllegalArgumentException("A and B must be non-negative, and B must be later "
                     + "in the sequence: a=" + a + " b=" + b);
         }
 
-        int block[] = new int[length];
-        int next;
+        ArrayList<BigInteger> block = new ArrayList<>(length);
+        BigInteger next;
         for (int i = 0; i < length; ++i) {
-            next = a + b;
+            next = a.add(b);
             a = b;
             b = next;
-            block[i] = next;
+            block.add(next);
         }
 
         return block;
@@ -138,29 +144,29 @@ public final class Fibonacci {
      * @return          Array of values in the sequence block
      * @see             #nextBlock(int, int, int)
      */
-    public static int[] sequence(final int length, int a, int b) {
+    public static ArrayList<BigInteger> sequence(final int length, BigInteger a, BigInteger b) {
         if (length <= 0) {
             throw new IllegalArgumentException("Length must be positive: " + length);
-        } else if (a < 0 || b < a) {
+        } else if (a.compareTo(BigInteger.ZERO) == -1 || b.compareTo(a) == -1) {
             throw new IllegalArgumentException("A and B must be non-negative, and B must be later "
                     + "in the sequence: a=" + a + " b=" + b);
         }
 
 
-        int block[] = new int[length];
-        block[0] = a;
+        ArrayList<BigInteger> block = new ArrayList<>(length);
+        block.add(a);
 
         if (length >= 2) {
-            block[1] = b;
+            block.add(b);
         }
 
         if (length > 2) {
-            int next;
+            BigInteger next;
             for (int i = 2; i < length; ++i) {
-                next = a + b;
+                next = a.add(b);
                 a = b;
                 b = next;
-                block[i] = next;
+                block.add(next);
             }
         }
 
@@ -186,14 +192,14 @@ public final class Fibonacci {
         //test at when starting with different value
         sb.setLength(0);
         for (int i = 0; i < 10; ++i) {
-            sb.append(Fibonacci.at(i, 5, 5)).append(" ");
+            sb.append(Fibonacci.at(i, new BigInteger("5"), new BigInteger("5"))).append(" ");
         }
         System.out.println(sb.toString());
 
         //test building a block
-        System.out.println(Arrays.toString(Fibonacci.sequence(10, 0, 1)));
+        System.out.println(Fibonacci.sequence(10, BigInteger.ZERO, BigInteger.ONE));
 
         //test building a next block
-        System.out.println(Arrays.toString(Fibonacci.nextBlock(10, 21, 34)));
+        System.out.println(Fibonacci.nextBlock(10, new BigInteger("21"), new BigInteger("34")));
     }
 }

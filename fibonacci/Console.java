@@ -19,6 +19,11 @@
 package fibonacci;
 
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.Scanner;
 
 
@@ -64,15 +69,27 @@ public class Console {
     }
 
     /**
-     * Maximum number of blocks displayed per second.
+     * Maximum number of blocks displayed per second is 5.
      */
     public static final int MAX_SPEED = 5;
+
+    /**
+     * Minimum delay is 1 second divided by max speed in milliseconds.
+     *
+     * @See TimeUnit#Milliseonds
+     */
+    public static final int MIN_DELAY = 1000 / MAX_SPEED;
+
+    /**
+     * Default block size per display is 10 terms.
+     */
+    public static final int DEFAULT_BLOCK_SIZE = 5;
 
 
     /**
      * The sequence will not go higher than this value. 0 will be {@link Integer#MAX_VALUE}.
      */
-    private int maxValue;
+    private BigInteger maxValue;
 
     /**
      * Number of blocks displayed per second. 0 will use {@link #MAX_SPEED}.
@@ -87,27 +104,42 @@ public class Console {
     /**
      * Second-last term used.
      */
-    private int term0;
+    private BigInteger term0;
 
     /**
      * Last term used.
      */
-    private int term1;
+    private BigInteger term1;
 
     /**
      * Last starting first term.
      */
-    private int startTerm0;
+    private BigInteger startTerm0;
 
     /**
      * Last starting second term.
      */
-    private int startTerm1;
+    private BigInteger startTerm1;
+
+    /**
+     * Current block size.
+     */
+    private int blockSize;
 
     /**
      * Scanner utility object
      */
     private static final Scanner cin = new Scanner(System.in);
+
+    /**
+     * Executor thread object
+     */
+    private static final ScheduledThreadPoolExecutor sch = new ScheduledThreadPoolExecutor(1);
+
+    /**
+     * Future scheduled block generation
+     */
+    private ScheduledFuture futureBlock;
 
 
 
@@ -117,12 +149,28 @@ public class Console {
     public Console() {
         state      = State.STOPPED;
         speed      = 0;
-        maxValue   = 0;
-        startTerm0 = 0;
-        startTerm1 = 1;
-        term0      = 0;
-        term1      = 1;
+        maxValue   = null;
+        startTerm0 = BigInteger.ZERO;
+        startTerm1 = BigInteger.ONE;
+        term0      = BigInteger.ZERO;
+        term1      = BigInteger.ONE;
+        blockSize  = DEFAULT_BLOCK_SIZE;
     }
+
+
+
+    static void printBlock(final ArrayList<BigInteger> block) {
+        int last = block.size() - 1;
+        StringBuilder sb = new StringBuilder("");
+        for (int i = 0; i < last; ++i) {
+            sb.append(block.get(i)).append(" ");
+        }
+
+        sb.append(block.get(last));
+
+        System.out.println(sb.toString());
+    }
+
 
 
     private void command(String input) {
@@ -161,6 +209,7 @@ public class Console {
     }
 
     private void exit() {
+        sch.shutdownNow();
         state = State.EXIT;
     }
 
@@ -185,15 +234,41 @@ public class Console {
 
             if (state == State.PAUSED) {
                 System.out.println("Resuming sequence ...");
-            }
-            else if (state == State.STOPPED) {
+                startTerm0 = term0;
+                startTerm1 = term1;
+            } else if (state == State.STOPPED) {
                 System.out.println("Starting standard Fibonacci sequence ...");
                 startTerm0 = Fibonacci.DEFAULT_0;
                 startTerm1 = Fibonacci.DEFAULT_1;
+                term0      = startTerm0;
+                term1      = startTerm1;
             }
 
             state = State.RUNNING;
-            // TODO: Start generator thread
+            ArrayList<BigInteger> firstBlock = Fibonacci.sequence(blockSize, startTerm0, startTerm1);
+            term0 = firstBlock.get(blockSize - 2);
+            term1 = firstBlock.get(blockSize - 1);
+            printBlock(firstBlock);
+            System.out.print(state.prompt());
+
+            Runnable generateNextBlock = new Runnable() {
+                @Override
+                public void run() {
+                    ArrayList<BigInteger> block = Fibonacci.nextBlock(blockSize, term0, term1);
+                    printBlock(block);
+                    term0 = block.get(blockSize - 2);
+                    term1 = block.get(blockSize - 1);
+
+                    System.out.print(state.prompt());
+                }
+            };
+
+            int period = calculatePeriod();
+            if (futureBlock != null && !futureBlock.isDone()) {
+                futureBlock.cancel(true);
+            }
+            futureBlock = sch.scheduleAtFixedRate(generateNextBlock, 1000, 1000,
+                                                    TimeUnit.MILLISECONDS);
         }
 
         else {
@@ -203,10 +278,10 @@ public class Console {
                 return;
             }
 
-            int t0 = 0, t1 = 1;
+            BigInteger t0 = BigInteger.ZERO, t1 = BigInteger.ONE;
             try {
-                t0 = Integer.parseInt(terms[0]);
-                t1 = Integer.parseInt(terms[1]);
+                t0 = new BigInteger(terms[0]);
+                t1 = new BigInteger(terms[1]);
             } catch (NumberFormatException e) {
                 System.out.println("Syntax: START [term1 term2]");
                 System.out.println("Terms must be integers. See HELP for more details.");
@@ -249,8 +324,21 @@ public class Console {
 
         while (state != State.EXIT) {
             System.out.print(state.prompt());
-            command(cin.nextLine());
+            String cmd = cin.nextLine();
+            command(cmd);
         }
+    }
+
+    private int calculatePeriod() {
+        int delay;
+
+        if (speed == 0 || speed >= MAX_SPEED) {
+            delay = 1000 / MAX_SPEED;
+        } else {
+            delay = 1000 / speed;
+        }
+
+        return delay;
     }
 
 
