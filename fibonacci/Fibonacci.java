@@ -54,8 +54,8 @@ public final class Fibonacci {
         if (term < 0) {
             throw new IllegalArgumentException("Term must be non-negative: " + term);
         }  else if (a < 0 || b < a) {
-            throw new IllegalArgumentException("A and B must be positive, and B must be later "
-                    + "in the sequence: a=" + a + " b=" + b);
+            throw new IllegalArgumentException("Terms must be positive, and second term must be "
+                    + "later in the sequence: term1=" + a + " term2=" + b);
         }
 
 
