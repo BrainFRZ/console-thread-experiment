@@ -97,14 +97,57 @@ public final class Fibonacci {
 
 
     /**
+     * Generates the next block of a sequence following two given values up to a maximum. The first
+     * term of the block is the sum of <code>a</code> and <code>b</code>, and each following term is
+     * the sum of the two before it. The block will be of size <code>length</code> or until a term
+     * is greater than <code>max</code>. The initial values <code>a</code> and <code>b</code> must
+     * be non-negative, and <code>b</code> should be the value immediately after <code>a</code> in
+     * the sequence. There is no validation beyond this, so it is possible to generate a block that
+     * could not legally follow a block that ended with <code>a</code> and <code>b</code>. Blocks
+     * can be called successively by reading the return array at index <code>length-2</code> for the
+     * next <code>a</code> and <code>length-1</code> for the next <code>b</code>.
+     *
+     * @param   length  Length of the sequence block
+     * @param   a       Two terms before block begins
+     * @param   b       One term before block begins
+     * @param   max     Maximum value in the block
+     * @return          ArrayList of values in the sequence block
+     * @see             #sequence(int, int, int)
+     */
+    public static ArrayList<BigInteger> nextBlock(final int length, BigInteger a, BigInteger b,
+            BigInteger max)
+    {
+        if (length <= 0) {
+            throw new IllegalArgumentException("Length must be positive: " + length);
+        } else if (a.compareTo(BigInteger.ZERO) == -1 || b.compareTo(a) == -1) {
+            throw new IllegalArgumentException("term1 and term2 must be non-negative, and "
+                    + "term2 must be later in the sequence: term1=" + a + " term2=" + b);
+        }
+
+        ArrayList<BigInteger> block = new ArrayList<>(length);
+        BigInteger next = a.add(b);
+        for (int i = 0; i < length && (max == null || next.compareTo(max) < 1); ++i) {
+            next = a.add(b);
+            a = b;
+            b = next;
+            if (max == null || next.compareTo(max) < 1) {
+                block.add(next);
+            }
+        }
+
+        return block;
+    }
+
+    /**
      * Generates the next block of a sequence following two given values. The first term of the
      * block is the sum of <code>a</code> and <code>b</code>, and each following term is the sum of
-     * the two before it. The two values <code>a</code> and <code>b</code> must be non-negative, and
-     * <code>b</code> should be the value immediately after <code>a</code> in the sequence. There is
-     * no validation beyond this, so it is possible to generate a block that could not legally
-     * follow a block that ended with <code>a</code> and <code>b</code>. Blocks can be called
-     * successively by reading the return array at index <code>length-2</code> for the next
-     * <code>a</code> and <code>length-1</code> for the next <code>b</code>.
+     * the two before it. The block will be of size <code>length</code>. The initial values
+     * <code>a</code> and <code>b</code> must be non-negative, and <code>b</code> should be the
+     * value immediately after <code>a</code> in the sequence. There is no validation beyond this,
+     * so it is possible to generate a block that could not legally follow a block that ended with
+     * <code>a</code> and <code>b</code>. Blocks can be called successively by reading the return
+     * array at index <code>length-2</code> for the next <code>a</code> and <code>length-1</code>
+     * for the next <code>b</code>.
      *
      * @param   length  Length of the sequence block
      * @param   a       Two terms before block begins
@@ -113,23 +156,7 @@ public final class Fibonacci {
      * @see             #sequence(int, int, int)
      */
     public static ArrayList<BigInteger> nextBlock(final int length, BigInteger a, BigInteger b) {
-        if (length <= 0) {
-            throw new IllegalArgumentException("Length must be positive: " + length);
-        } else if (a.compareTo(BigInteger.ZERO) == -1 || b.compareTo(a) == -1) {
-            throw new IllegalArgumentException("A and B must be non-negative, and B must be later "
-                    + "in the sequence: a=" + a + " b=" + b);
-        }
-
-        ArrayList<BigInteger> block = new ArrayList<>(length);
-        BigInteger next;
-        for (int i = 0; i < length; ++i) {
-            next = a.add(b);
-            a = b;
-            b = next;
-            block.add(next);
-        }
-
-        return block;
+        return nextBlock(length, a, b, null);
     }
 
 

@@ -243,32 +243,6 @@ public class Console {
                 term0      = startTerm0;
                 term1      = startTerm1;
             }
-
-            state = State.RUNNING;
-            ArrayList<BigInteger> firstBlock = Fibonacci.sequence(blockSize, startTerm0, startTerm1);
-            term0 = firstBlock.get(blockSize - 2);
-            term1 = firstBlock.get(blockSize - 1);
-            printBlock(firstBlock);
-            System.out.print(state.prompt());
-
-            Runnable generateNextBlock = new Runnable() {
-                @Override
-                public void run() {
-                    ArrayList<BigInteger> block = Fibonacci.nextBlock(blockSize, term0, term1);
-                    printBlock(block);
-                    term0 = block.get(blockSize - 2);
-                    term1 = block.get(blockSize - 1);
-
-                    System.out.print(state.prompt());
-                }
-            };
-
-            int period = calculatePeriod();
-            if (futureBlock != null && !futureBlock.isDone()) {
-                futureBlock.cancel(true);
-            }
-            futureBlock = sch.scheduleAtFixedRate(generateNextBlock, 1000, 1000,
-                                                    TimeUnit.MILLISECONDS);
         }
 
         else {
@@ -285,22 +259,48 @@ public class Console {
             } catch (NumberFormatException e) {
                 System.out.println("Syntax: START [term1 term2]");
                 System.out.println("Terms must be integers. See HELP for more details.");
-//              return;
-            }
-
-/*
-            startTerm0 = t0;
-            startTerm1 = t1;
-            try {
-                TODO: Start generator thread
-            } catch (IllegalArgumentException e) {
-                System.out.println("Syntax: START [term1 term2]");
-                System.out.println(e.getMessage());
-                System.out.println("See HELP for more details.");
                 return;
             }
-*/
+
+            startTerm0 = t0;
+            startTerm1 = t1;
+            term0      = t0;
+            term1      = t1;
         }
+
+        try {
+            ArrayList<BigInteger> firstBlock = Fibonacci.sequence(blockSize, startTerm0, startTerm1);
+            term0 = firstBlock.get(blockSize - 2);
+            term1 = firstBlock.get(blockSize - 1);
+            state = State.RUNNING;
+            System.out.print(state.prompt());
+            printBlock(firstBlock);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Syntax: START [term1 term2]");
+            System.out.println(e.getMessage());
+            System.out.println("See HELP for more details.");
+            return;
+        }
+
+        Runnable generateNextBlock = new Runnable() {
+            @Override
+            public void run() {
+                ArrayList<BigInteger> block = Fibonacci.nextBlock(blockSize, term0, term1, maxValue);
+                System.out.println();
+                printBlock(block);
+                term0 = block.get(blockSize - 2);
+                term1 = block.get(blockSize - 1);
+
+                System.out.print(state.prompt());
+            }
+        };
+
+        int period = calculatePeriod();
+        if (futureBlock != null && !futureBlock.isDone()) {
+            futureBlock.cancel(true);
+        }
+        futureBlock = sch.scheduleAtFixedRate(generateNextBlock, 0, period,
+                                                TimeUnit.MILLISECONDS);
     }
 
     private void stop() {
@@ -312,7 +312,7 @@ public class Console {
         state = State.STOPPED;
         term0 = startTerm0;
         term1 = startTerm1;
-        //TODO: stop sequence thread
+        futureBlock.cancel(true);
         System.out.println("The sequence has been stopped.");
     }
 
