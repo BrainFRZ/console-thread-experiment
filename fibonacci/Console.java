@@ -69,16 +69,18 @@ public class Console {
     }
 
     /**
-     * Maximum number of blocks displayed per second is 5.
-     */
-    public static final int MAX_SPEED = 5;
-
-    /**
-     * Minimum delay is 1 second divided by max speed in milliseconds.
+     * Minimum period between blocks display is 200 milliseconds (0.2 seconds).
      *
      * @See TimeUnit#Milliseonds
      */
-    public static final int MIN_DELAY = 1000 / MAX_SPEED;
+    public static final long MIN_PERIOD = 200;
+
+    /**
+     * Default period between blocks display is 1000 milliseconds (1 second).
+     *
+     * @See TimeUnit#Milliseonds
+     */
+    public static final long DEFAULT_PERIOD = 1000;
 
     /**
      * Default block size per display is 10 terms.
@@ -87,14 +89,16 @@ public class Console {
 
 
     /**
-     * The sequence will not go higher than this value. 0 will be {@link Integer#MAX_VALUE}.
+     * The sequence will not go higher than this value. 0 will be indefinite.
      */
     private BigInteger maxValue;
 
     /**
-     * Number of blocks displayed per second. 0 will use {@link #MAX_SPEED}.
+     * Period between display of blocks in milliseconds. 0 will use {@link #MIN_PERIOD}.
+     *
+     * @See TimeUnit#Milliseonds
      */
-    private int speed;
+    private long period;
 
     /**
      * Current state of runtime.
@@ -148,7 +152,7 @@ public class Console {
      */
     public Console() {
         state      = State.STOPPED;
-        speed      = 0;
+        period     = DEFAULT_PERIOD;
         maxValue   = null;
         startTerm0 = BigInteger.ZERO;
         startTerm1 = BigInteger.ONE;
@@ -183,6 +187,26 @@ public class Console {
         futureBlock.cancel(false);
     }
 
+    private void scheduleFutureBlock(long delay) {
+        Runnable generateNextBlock = new Runnable() {
+            @Override
+            public void run() {
+                System.out.println();
+                printBlock(buildBlock(false));
+
+                System.out.print(state.prompt());
+            }
+        };
+
+        if (futureBlock != null && !futureBlock.isDone()) {
+            long currentDelay = futureBlock.getDelay(TimeUnit.MILLISECONDS);
+            delay = Math.max(0, delay - currentDelay);
+            futureBlock.cancel(true);
+        }
+        futureBlock = sch.scheduleAtFixedRate(generateNextBlock, delay, period,
+                                                TimeUnit.MILLISECONDS);
+    }
+
     private void setStart(BigInteger t0, BigInteger t1) {
         startTerm0 = t0;
         startTerm1 = t1;
@@ -201,21 +225,7 @@ public class Console {
             return;
         }
 
-        Runnable generateNextBlock = new Runnable() {
-            @Override
-            public void run() {
-                System.out.println();
-                printBlock(buildBlock(false));
-
-                System.out.print(state.prompt());
-            }
-        };
-
-        if (futureBlock != null && !futureBlock.isDone()) {
-            futureBlock.cancel(true);
-        }
-        futureBlock = sch.scheduleAtFixedRate(generateNextBlock, 0, calculatePeriod(),
-                                                TimeUnit.MILLISECONDS);
+        scheduleFutureBlock(period);
     }
 
     private void stop() {
@@ -259,6 +269,9 @@ public class Console {
             case "start":
                 cmdStart(arg);
                 break;
+            case "speed":
+                cmdSpeed(arg);
+                break;
             case "pause":
                 cmdPause();
                 break;
@@ -301,6 +314,28 @@ public class Console {
         }
 
         start();
+    }
+
+    private void cmdSpeed(String arg) {
+        double input;
+        if (arg.isEmpty()) {
+            input = MIN_PERIOD;
+        } else {
+            try {
+                input = Double.parseDouble(arg);
+            } catch (NumberFormatException e) {
+                System.out.println("Syntax: SPEED [period]");
+                System.out.println("Period must be a number. See HELP for details.");
+                return;
+            }
+        }
+
+        calculatePeriod(input);
+        System.out.println("Speed changed to " + period + "ms.");
+
+        if (state == State.RUNNING) {
+            scheduleFutureBlock(period);
+        }
     }
 
     private void cmdStart(String args) {
@@ -368,16 +403,12 @@ public class Console {
         }
     }
 
-    private int calculatePeriod() {
-        int delay;
+    private void calculatePeriod(double newPeriod) {
+        period = (int)(newPeriod * 1000);
 
-        if (speed == 0 || speed >= MAX_SPEED) {
-            delay = 1000 / MAX_SPEED;
-        } else {
-            delay = 1000 / speed;
+        if (period < MIN_PERIOD) {
+            period = MIN_PERIOD;
         }
-
-        return delay;
     }
 
 
