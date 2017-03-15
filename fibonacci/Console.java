@@ -159,6 +159,72 @@ public class Console {
 
 
 
+    private ArrayList<BigInteger> buildBlock(boolean isFirst) {
+        ArrayList<BigInteger> block;
+
+        if (isFirst) {
+            block = Fibonacci.sequence(blockSize, startTerm0, startTerm1);
+        } else {
+            block = Fibonacci.nextBlock(blockSize, term0, term1, maxValue);
+        }
+        term0 = block.get(blockSize - 2);
+        term1 = block.get(blockSize - 1);
+
+        return block;
+    }
+
+    private void exit() {
+        sch.shutdownNow();
+        state = State.EXIT;
+    }
+
+    private void pause() {
+        state = State.PAUSED;
+        futureBlock.cancel(false);
+    }
+
+    private void setStart(BigInteger t0, BigInteger t1) {
+        startTerm0 = t0;
+        startTerm1 = t1;
+    }
+
+    private void start() {
+        try {
+            ArrayList<BigInteger> firstBlock = buildBlock(true);
+            state = State.RUNNING;
+            System.out.println(state.prompt());
+            printBlock(firstBlock);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Syntax: START [term1 term2]");
+            System.out.println(e.getMessage());
+            System.out.println("See HELP for more details.");
+            return;
+        }
+
+        Runnable generateNextBlock = new Runnable() {
+            @Override
+            public void run() {
+                System.out.println();
+                printBlock(buildBlock(false));
+
+                System.out.print(state.prompt());
+            }
+        };
+
+        if (futureBlock != null && !futureBlock.isDone()) {
+            futureBlock.cancel(true);
+        }
+        futureBlock = sch.scheduleAtFixedRate(generateNextBlock, 0, calculatePeriod(),
+                                                TimeUnit.MILLISECONDS);
+    }
+
+    private void stop() {
+        state = State.STOPPED;
+        futureBlock.cancel(true);
+    }
+
+
+
     static void printBlock(final ArrayList<BigInteger> block) {
         int last = block.size() - 1;
         StringBuilder sb = new StringBuilder("");
@@ -191,16 +257,16 @@ public class Console {
 
         switch (cmd) {
             case "start":
-                start(arg);
+                cmdStart(arg);
                 break;
             case "pause":
-                pause();
+                cmdPause();
                 break;
             case "stop":
-                stop();
+                cmdStop();
                 break;
             case "restart":
-                restart();
+                cmdRestart();
                 break;
             case "exit":
                 exit();
@@ -211,23 +277,17 @@ public class Console {
         }
     }
 
-    private void exit() {
-        sch.shutdownNow();
-        state = State.EXIT;
-    }
-
-    private void pause() {
+    private void cmdPause() {
         if (state != State.RUNNING) {
             System.out.println("No sequence is currently running.");
             return;
         }
 
-        state = State.PAUSED;
-        System.out.println("Pausing sequence ...");
-        futureBlock.cancel(false);
+        pause();
+        System.out.println("\nPausing sequence ...");
     }
 
-    private void restart() {
+    private void cmdRestart() {
         if (state == State.STOPPED) {
             System.out.println("No sequence is currently active.");
             return;
@@ -238,42 +298,12 @@ public class Console {
             futureBlock.cancel(true);
         } else if (state == State.PAUSED) {
             System.out.println("Restarting current sequence ...");
-
         }
 
-        System.out.println("Restarting sequence ...");
-        term0 = startTerm0;
-        term1 = startTerm1;
-
-        ArrayList<BigInteger> firstBlock = Fibonacci.sequence(blockSize, startTerm0, startTerm1);
-        term0 = firstBlock.get(blockSize - 2);
-        term1 = firstBlock.get(blockSize - 1);
-        state = State.RUNNING;
-        System.out.println(state.prompt());
-        printBlock(firstBlock);
-
-        Runnable generateNextBlock = new Runnable() {
-            @Override
-            public void run() {
-                ArrayList<BigInteger> block = Fibonacci.nextBlock(blockSize, term0, term1, maxValue);
-                System.out.println();
-                printBlock(block);
-                term0 = block.get(blockSize - 2);
-                term1 = block.get(blockSize - 1);
-
-                System.out.print(state.prompt());
-            }
-        };
-
-        int period = calculatePeriod();
-        if (futureBlock != null && !futureBlock.isDone()) {
-            futureBlock.cancel(true);
-        }
-        futureBlock = sch.scheduleAtFixedRate(generateNextBlock, 0, period,
-                                                TimeUnit.MILLISECONDS);
+        start();
     }
 
-    private void start(String args) {
+    private void cmdStart(String args) {
         if (args.isEmpty()) {
             if (state == State.RUNNING) {
                 System.out.println("The sequence is already running. "
@@ -283,14 +313,11 @@ public class Console {
 
             if (state == State.PAUSED) {
                 System.out.println("Resuming sequence ...");
-                startTerm0 = term0;
-                startTerm1 = term1;
+                setStart(term0, term1);
             } else if (state == State.STOPPED) {
                 System.out.println("Starting standard Fibonacci sequence ...");
                 startTerm0 = Fibonacci.DEFAULT_0;
                 startTerm1 = Fibonacci.DEFAULT_1;
-                term0      = startTerm0;
-                term1      = startTerm1;
             }
         }
 
@@ -301,7 +328,7 @@ public class Console {
                 return;
             }
 
-            BigInteger t0 = BigInteger.ZERO, t1 = BigInteger.ONE;
+            BigInteger t0, t1;
             try {
                 t0 = new BigInteger(terms[0]);
                 t1 = new BigInteger(terms[1]);
@@ -313,55 +340,18 @@ public class Console {
 
             startTerm0 = t0;
             startTerm1 = t1;
-            term0      = t0;
-            term1      = t1;
         }
 
-        try {
-            ArrayList<BigInteger> firstBlock = Fibonacci.sequence(blockSize, startTerm0, startTerm1);
-            term0 = firstBlock.get(blockSize - 2);
-            term1 = firstBlock.get(blockSize - 1);
-            state = State.RUNNING;
-            System.out.println(state.prompt());
-            printBlock(firstBlock);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Syntax: START [term1 term2]");
-            System.out.println(e.getMessage());
-            System.out.println("See HELP for more details.");
-            return;
-        }
-
-        Runnable generateNextBlock = new Runnable() {
-            @Override
-            public void run() {
-                ArrayList<BigInteger> block = Fibonacci.nextBlock(blockSize, term0, term1, maxValue);
-                System.out.println();
-                printBlock(block);
-                term0 = block.get(blockSize - 2);
-                term1 = block.get(blockSize - 1);
-
-                System.out.print(state.prompt());
-            }
-        };
-
-        int period = calculatePeriod();
-        if (futureBlock != null && !futureBlock.isDone()) {
-            futureBlock.cancel(true);
-        }
-        futureBlock = sch.scheduleAtFixedRate(generateNextBlock, 0, period,
-                                                TimeUnit.MILLISECONDS);
+        start();
     }
 
-    private void stop() {
+    private void cmdStop() {
         if (state == State.STOPPED) {
             System.out.println("There is currently no sequence running.");
             return;
         }
 
-        state = State.STOPPED;
-        term0 = startTerm0;
-        term1 = startTerm1;
-        futureBlock.cancel(true);
+        stop();
         System.out.println("\nThe sequence has been stopped.");
     }
 
