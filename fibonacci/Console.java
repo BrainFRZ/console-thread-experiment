@@ -199,6 +199,9 @@ public class Console {
             case "stop":
                 stop();
                 break;
+            case "restart":
+                restart();
+                break;
             case "exit":
                 exit();
                 break;
@@ -219,9 +222,55 @@ public class Console {
             return;
         }
 
-        System.out.println("Pausing sequence ...");
-        // TODO: Pause process
         state = State.PAUSED;
+        System.out.println("Pausing sequence ...");
+        futureBlock.cancel(false);
+    }
+
+    private void restart() {
+        if (state == State.STOPPED) {
+            System.out.println("No sequence is currently active.");
+            return;
+        }
+
+        if (state == State.RUNNING) {
+            System.out.println("Stopping current sequence ...");
+            futureBlock.cancel(true);
+        } else if (state == State.PAUSED) {
+            System.out.println("Restarting current sequence ...");
+
+        }
+
+        System.out.println("Restarting sequence ...");
+        term0 = startTerm0;
+        term1 = startTerm1;
+
+        ArrayList<BigInteger> firstBlock = Fibonacci.sequence(blockSize, startTerm0, startTerm1);
+        term0 = firstBlock.get(blockSize - 2);
+        term1 = firstBlock.get(blockSize - 1);
+        state = State.RUNNING;
+        System.out.println(state.prompt());
+        printBlock(firstBlock);
+
+        Runnable generateNextBlock = new Runnable() {
+            @Override
+            public void run() {
+                ArrayList<BigInteger> block = Fibonacci.nextBlock(blockSize, term0, term1, maxValue);
+                System.out.println();
+                printBlock(block);
+                term0 = block.get(blockSize - 2);
+                term1 = block.get(blockSize - 1);
+
+                System.out.print(state.prompt());
+            }
+        };
+
+        int period = calculatePeriod();
+        if (futureBlock != null && !futureBlock.isDone()) {
+            futureBlock.cancel(true);
+        }
+        futureBlock = sch.scheduleAtFixedRate(generateNextBlock, 0, period,
+                                                TimeUnit.MILLISECONDS);
     }
 
     private void start(String args) {
@@ -273,7 +322,7 @@ public class Console {
             term0 = firstBlock.get(blockSize - 2);
             term1 = firstBlock.get(blockSize - 1);
             state = State.RUNNING;
-            System.out.print(state.prompt());
+            System.out.println(state.prompt());
             printBlock(firstBlock);
         } catch (IllegalArgumentException e) {
             System.out.println("Syntax: START [term1 term2]");
@@ -313,7 +362,7 @@ public class Console {
         term0 = startTerm0;
         term1 = startTerm1;
         futureBlock.cancel(true);
-        System.out.println("The sequence has been stopped.");
+        System.out.println("\nThe sequence has been stopped.");
     }
 
 
