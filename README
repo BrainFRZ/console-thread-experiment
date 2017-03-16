@@ -18,9 +18,8 @@ COMMANDS
     restart     If running or paused: immediately restarts from starting terms
                 If not running: message is displayed
 
-    speed [#]   Changes the time allotted for each iteration. If no value is
-                given, the speed is reset to default. If speed is set to 0,
-                scheduling is suspended and process continues until terminated.
+    speed [#]   Changes the time in seconds allotted for each iteration. If no
+                value is given, the speed is reset to default.
 
     start [# #] If values are negative or the second is less than the first, an
                     error message is displayed.

@@ -110,7 +110,6 @@ public final class Fibonacci {
      * @param   length  Length of the sequence block
      * @param   a       Two terms before block begins
      * @param   b       One term before block begins
-     * @param   max     Maximum value in the block
      * @return          ArrayList of values in the sequence block
      * @see             #sequence(int, int, int)
      */
@@ -179,30 +178,4 @@ public final class Fibonacci {
 
     // Private constructor to prevent instantiation
     private Fibonacci() {}
-
-
-
-
-    //testing driver method
-    public static void main(String[] args) {
-        // test at by finding first 10 terms
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 10; ++i) {
-            sb.append(Fibonacci.at(i)).append(" ");
-        }
-        System.out.println(sb.toString());
-
-        //test at when starting with different value
-        sb.setLength(0);
-        for (int i = 0; i < 10; ++i) {
-            sb.append(Fibonacci.at(i, new BigInteger("5"), new BigInteger("5"))).append(" ");
-        }
-        System.out.println(sb.toString());
-
-        //test building a block
-        System.out.println(Fibonacci.sequence(10, BigInteger.ZERO, BigInteger.ONE));
-
-        //test building a next block
-        System.out.println(Fibonacci.nextBlock(10, new BigInteger("21"), new BigInteger("34")));
-    }
 }
