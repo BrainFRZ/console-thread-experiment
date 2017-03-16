@@ -89,7 +89,7 @@ public class Console {
 
 
     /**
-     * The sequence will not go higher than this value. 0 will be indefinite.
+     * The sequence will not go higher than this value. Null will be indefinite.
      */
     private BigInteger maxValue;
 
@@ -169,7 +169,7 @@ public class Console {
         if (isFirst) {
             block = Fibonacci.sequence(blockSize, startTerm0, startTerm1);
         } else {
-            block = Fibonacci.nextBlock(blockSize, term0, term1, maxValue);
+            block = Fibonacci.nextBlock(blockSize, term0, term1);
         }
         term0 = block.get(blockSize - 2);
         term1 = block.get(blockSize - 1);
@@ -192,7 +192,14 @@ public class Console {
             @Override
             public void run() {
                 System.out.println();
-                printBlock(buildBlock(false));
+                ArrayList<BigInteger> block = buildBlock(false);
+
+                printBlock(block, maxValue);
+                if (term1.compareTo(maxValue) >= 0)
+                {
+                    System.out.println("Sequence completed.");
+                    stop();
+                }
 
                 System.out.print(state.prompt());
             }
@@ -217,7 +224,7 @@ public class Console {
             ArrayList<BigInteger> firstBlock = buildBlock(true);
             state = State.RUNNING;
             System.out.println(state.prompt());
-            printBlock(firstBlock);
+            printBlock(firstBlock, maxValue);
         } catch (IllegalArgumentException e) {
             System.out.println("Syntax: START [term1 term2]");
             System.out.println(e.getMessage());
@@ -235,16 +242,24 @@ public class Console {
 
 
 
-    static void printBlock(final ArrayList<BigInteger> block) {
-        int last = block.size() - 1;
+    static void printBlock(final ArrayList<BigInteger> block, final BigInteger max) {
         StringBuilder sb = new StringBuilder("");
-        for (int i = 0; i < last; ++i) {
-            sb.append(block.get(i)).append(" ");
+        boolean add = true;
+
+        BigInteger next;
+        for (int i = 0; i < block.size() && add; ++i) {
+            next = block.get(i);
+            if (next.compareTo(max) > 0) {
+                add = false;
+            } else {
+                sb.append(next).append(" ");
+            }
         }
 
-        sb.append(block.get(last));
-
-        System.out.println(sb.toString());
+        String out = sb.toString().trim();
+        if (!out.isEmpty()) {
+            System.out.println(out);
+        }
     }
 
 
@@ -269,6 +284,9 @@ public class Console {
             case "start":
                 cmdStart(arg);
                 break;
+            case "max":
+                cmdMax(arg);
+                break;
             case "speed":
                 cmdSpeed(arg);
                 break;
@@ -287,6 +305,20 @@ public class Console {
             default:
                 System.out.println("Unrecognized command: " + cmd);
                 break;
+        }
+    }
+
+    private void cmdMax(String arg) {
+        if (arg.isEmpty()) {
+            maxValue = null;
+            System.out.println("\nMax value has been cleared.");
+        }
+
+        try {
+            maxValue = new BigInteger(arg);
+        } catch (NumberFormatException e) {
+            System.out.println("Syntax: MAX [max value]");
+            System.out.println("Max value must be an integer. See HELP for details.");
         }
     }
 
