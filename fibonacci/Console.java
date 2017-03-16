@@ -225,9 +225,9 @@ public class Console {
         startTerm1 = t1;
     }
 
-    private void start() {
+    private void start(boolean first) {
         try {
-            ArrayList<BigInteger> firstBlock = buildBlock(true);
+            ArrayList<BigInteger> firstBlock = buildBlock(first);
             state = State.RUNNING;
             System.out.println(state.prompt());
             printBlock(firstBlock, maxValue);
@@ -353,7 +353,7 @@ public class Console {
     private void cmdMax(String arg) {
         if (arg.isEmpty()) {
             maxValue = null;
-            System.out.println("\nMax value has been cleared.");
+            System.out.println("Max value has been cleared.");
         }
 
         try {
@@ -371,7 +371,7 @@ public class Console {
         }
 
         pause();
-        System.out.println("\nPausing sequence ...");
+        System.out.println("Pausing sequence ...");
     }
 
     private void cmdReset() {
@@ -389,10 +389,11 @@ public class Console {
             System.out.println("Stopping current sequence ...");
             futureBlock.cancel(true);
         } else if (state == State.PAUSED) {
+            setStart(startTerm0, startTerm1);
             System.out.println("Restarting current sequence ...");
         }
 
-        start();
+        start(true);
     }
 
     private void cmdSpeed(String arg) {
@@ -456,7 +457,8 @@ public class Console {
             startTerm1 = t1;
         }
 
-        start();
+        boolean firstBlock = state == State.STOPPED;
+        start(firstBlock);
     }
 
     private void cmdStop() {
