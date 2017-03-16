@@ -187,6 +187,12 @@ public class Console {
         futureBlock.cancel(false);
     }
 
+    private void reset() {
+        stop();
+        setStart(BigInteger.ZERO, BigInteger.ONE);
+        maxValue = null;
+    }
+
     private void scheduleFutureBlock(long delay) {
         Runnable generateNextBlock = new Runnable() {
             @Override
@@ -195,7 +201,7 @@ public class Console {
                 ArrayList<BigInteger> block = buildBlock(false);
 
                 printBlock(block, maxValue);
-                if (term1.compareTo(maxValue) >= 0)
+                if (maxValue != null && term1.compareTo(maxValue) >= 0)
                 {
                     System.out.println("Sequence completed.");
                     stop();
@@ -249,7 +255,7 @@ public class Console {
         BigInteger next;
         for (int i = 0; i < block.size() && add; ++i) {
             next = block.get(i);
-            if (next.compareTo(max) > 0) {
+            if (max != null && next.compareTo(max) > 0) {
                 add = false;
             } else {
                 sb.append(next).append(" ");
@@ -296,6 +302,9 @@ public class Console {
             case "stop":
                 cmdStop();
                 break;
+            case "reset":
+                cmdReset();
+                break;
             case "restart":
                 cmdRestart();
                 break;
@@ -330,6 +339,11 @@ public class Console {
 
         pause();
         System.out.println("\nPausing sequence ...");
+    }
+
+    private void cmdReset() {
+        reset();
+        System.out.println("Environment reset.");
     }
 
     private void cmdRestart() {
@@ -419,7 +433,7 @@ public class Console {
         }
 
         stop();
-        System.out.println("\nThe sequence has been stopped.");
+        System.out.println("The sequence has been stopped.");
     }
 
 
