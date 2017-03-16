@@ -287,6 +287,9 @@ public class Console {
         }
 
         switch (cmd) {
+            case "help":
+                cmdHelp();
+                break;
             case "start":
                 cmdStart(arg);
                 break;
@@ -315,6 +318,36 @@ public class Console {
                 System.out.println("Unrecognized command: " + cmd);
                 break;
         }
+    }
+
+    private static void cmdHelp() {
+        final String HELP =
+
+        "    help        Lists each command and its description (this list)\n\n"                +
+
+        "    max [#]     Sets process to end when past given value\n\n"                         +
+
+        "    pause       Pauses process if running, or message is displayed\n\n"                +
+
+        "    reset       Stops process and resets environment to default starting state\n\n"    +
+
+        "    restart     If running or paused: immediately restarts from starting terms\n"      +
+        "                If not running: message is displayed\n\n"                              +
+
+        "    speed [#]   Changes the time allotted for each iteration. If no value is\n"        +
+        "                given, the speed is reset to default. If speed is set to 0,\n"         +
+        "                scheduling is suspended and process continues until terminated.\n\n"   +
+
+        "    start [# #] If values are negative or the second is less than the first, an\n"     +
+        "                    error message is displayed.\n"                                     +
+        "                If stopped, starts at given value or 0 and 1.\n"                       +
+        "                If running, starts program execution from given value. If\n"           +
+        "                    no value is given, message is displayed\n"                         +
+        "                If paused, process resumes at given value or last value.\n\n"          +
+
+        "    stop        Stops the process if running, or displays a message\n";
+
+        System.out.println(HELP);
     }
 
     private void cmdMax(String arg) {
