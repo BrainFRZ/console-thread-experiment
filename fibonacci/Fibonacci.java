@@ -38,12 +38,12 @@ public final class Fibonacci {
     /**
      * Default term 0 is 0.
      */
-    public static final BigInteger DEFAULT_0 = new BigInteger("0");
+    public static final BigInteger DEFAULT_0 = BigInteger.ZERO;
 
     /**
      * Default term 1 is 1.
      */
-    public static final BigInteger DEFAULT_1 = new BigInteger("1");
+    public static final BigInteger DEFAULT_1 = BigInteger.ONE;
 
     /**
      * Calculates a specific term of the Fibonacci sequence with generalized starting terms.
